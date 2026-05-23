@@ -58,7 +58,7 @@
         const BASE_FIXED_EXPENSE = 4545197; 
         const UNIT_AREAS = { 'A': 1326, 'B': 1279, 'C': 1818, 'D': 1246, 'E': 1246, 'F': 1770, 'G': 1275 };
         
-        const formatCurrency = (amount) => new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', maximumFractionDigits: 0 }).format(amount);
+        const formatCurrency = (amount) => new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'MOP', maximumFractionDigits: 0 }).format(amount);
         const formatNum = (amount) => new Intl.NumberFormat('zh-HK', { maximumFractionDigits: 0 }).format(amount);
 
         const calculateFinancials = (rate, rebate, year, remunRate=5.8, expIncrease=0, r2Bug=false, manualExpStr='', incOther=true, otherIncVal=179393) => {
