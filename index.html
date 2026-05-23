@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>L5T2 管理費方案計算工具</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 強制隱藏所有元素的滾動條，營造 Native App 手感 */
+        * { 
+            scrollbar-width: none !important; 
+            -ms-overflow-style: none !important; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        *::-webkit-scrollbar { 
+            display: none !important; 
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f8fafc; 
+            overscroll-behavior: none; 
+        }
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); cursor: pointer; margin-top: -9px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #e2e8f0; border-radius: 3px; }
+        .range-blue::-webkit-slider-thumb { border: 2px solid #2563eb; }
+        .range-emerald::-webkit-slider-thumb { border: 2px solid #059669; }
+        
+        .sticky-col-shadow { box-shadow: 2px 0 5px -2px rgba(0,0,0,0.08); }
+        .sticky-header-shadow { box-shadow: 0 2px 5px -2px rgba(0,0,0,0.08); }
+        .table-scroll-container { -webkit-overflow-scrolling: touch; overscroll-behavior: none; transform: translateZ(0); }
+        
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased"> 
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Icons ---
+        const CalcIcon = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>);
+        const TableIcon = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>);
+        const ShieldIcon = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>);
+        const InfoIcon = ({size=16, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>);
+        const SettingsIcon = ({size=16, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>);
+        const CloseIcon = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
+        const AlertIcon = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>);
+
+        // --- Constants & Math ---
+        const TOTAL_AREA = 335130; 
+        const BASE_FIXED_EXPENSE = 4545197; 
+        const UNIT_AREAS = { 'A': 1326, 'B': 1279, 'C': 1818, 'D': 1246, 'E': 1246, 'F': 1770, 'G': 1275 };
+        
+        const formatCurrency = (amount) => new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', maximumFractionDigits: 0 }).format(amount);
+        const formatNum = (amount) => new Intl.NumberFormat('zh-HK', { maximumFractionDigits: 0 }).format(amount);
+
+        const calculateFinancials = (rate, rebate, year, remunRate=5.8, expIncrease=0, r2Bug=false, manualExpStr='', incOther=true, otherIncVal=179393) => {
+            let grossMgmtFeeBase, grossSinkingBase;
+            
+            if (year === 2026) {
+                grossMgmtFeeBase = TOTAL_AREA * 0.9 * (2.0 * 7 + rate * 5);
+                grossSinkingBase = TOTAL_AREA * 0.1 * (2.0 * 7 + rate * 5);
+            } else {
+                grossMgmtFeeBase = TOTAL_AREA * 0.9 * (rate * 12);
+                grossSinkingBase = TOTAL_AREA * 0.1 * (rate * 12);
+            }
+
+            let rebateMgmt = TOTAL_AREA * 0.9 * rate * rebate;
+            let rebateSinking = TOTAL_AREA * 0.1 * rate * rebate;
+            
+            let actualOtherIncome = incOther ? Number(otherIncVal) : 0;
+            let totalCashIn = (grossMgmtFeeBase - rebateMgmt) + actualOtherIncome;
+
+            let commissionRate = year === 2026 ? 0.07 : (remunRate / 100);
+            let grossCommission = grossMgmtFeeBase * commissionRate;
+
+            if (year === 2027 && r2Bug && rate !== 2.0) {
+                let buggyMgmtFeeBase = TOTAL_AREA * 0.9 * (2.0 * 7 + rate * 5);
+                grossCommission = buggyMgmtFeeBase * commissionRate;
+            }
+
+            let commissionRebate = rebateMgmt * commissionRate;
+            let netCommission = grossCommission - commissionRebate;
+
+            let baseExp = (manualExpStr !== '' && manualExpStr !== null) 
+                ? Number(manualExpStr) 
+                : BASE_FIXED_EXPENSE * (1 + expIncrease / 100);
+            
+            let totalCashOut = baseExp + netCommission;
+
+            let opCashFlow = totalCashIn - totalCashOut;
+            let sinkingAdvance = -rebateSinking;
+            
+            let accountingSurplus = opCashFlow + sinkingAdvance; 
+            let totalSinkingStored = grossSinkingBase; 
+            
+            // 【核心公式】：大廈當年總結餘 = 當年撥入死期儲備金 + 官方帳面盈虧
+            let totalBalance = totalSinkingStored + accountingSurplus; 
+
+            let finalAvgRate = year === 2026 
+                ? ((2.0 * 7 + rate * (5 - rebate)) / 12)
+                : (rate * (12 - rebate) / 12);
+
+            return { opCashFlow, sinkingAdvance, accountingSurplus, totalBalance, netCommission, totalSinkingStored, finalAvgRate, baseExp };
+        };
+
+        // --- Rules Modal ---
+        const RulesModal = ({ isOpen, onClose }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
+                    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="bg-slate-800 text-white p-4 flex justify-between items-center">
+                            <h3 className="font-bold flex items-center gap-2"><InfoIcon/> 計算基準與物管規則</h3>
+                            <button onClick={onClose} className="p-1 text-white/70 hover:text-white"><CloseIcon size={20}/></button>
+                        </div>
+                        <div className="p-5 space-y-4 text-sm text-slate-700 leading-relaxed max-h-[70vh] overflow-y-auto">
+                            <div className="space-y-1">
+                                <h4 className="font-bold text-cyan-700">1.「90/10 法定拆分法則」</h4>
+                                <p>業主繳交之管理費總額中，<span className="font-bold">90%</span> 撥入日常營運活期戶口（物管公司按此金額抽佣）；<span className="font-bold">10%</span> 依法強制存入共同儲備基金（死期戶口，絕對免佣）。</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold text-cyan-700">2.「免交期 0 酬金機制」</h4>
+                                <p>在回贈（免交）月份內，物管公司<span className="font-bold">不收取該月對應之管理酬金</span>。因此回贈月數減少，物管公司實際落袋酬金將直接增加。</p>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="font-bold text-cyan-700">3.「大廈總結餘 vs 帳面盈虧」</h4>
+                                <p>免交期內大廈仍需墊支10%管理費作為儲備基金，款項由活期戶口撥入儲備基金，此為大部分方案的「帳面虧損」來源。但此舉實為大廈資產之<span className="font-bold">內部強制儲蓄轉移</span>。評估大廈儲錢能力，應看「當年總結餘」（即儲備金與帳面盈虧之加總）。</p>
+                            </div>
+                            <div className="space-y-2 pt-2 border-t border-slate-100">
+                                <h4 className="font-bold text-cyan-700">4.「目前大廈真實財政狀態與防禦力」</h4>
+                                <p>大廈目前持有兩個獨立帳戶：</p>
+                                <ul className="list-disc pl-5 space-y-1 text-slate-700">
+                                    <li><span className="font-bold text-slate-800">日常營運戶口 (活期)</span>：結餘約 570 萬（當中 400 萬作定期存款）。此戶口資金由物管公司按日常開支靈活調配。</li>
+                                    <li><span className="font-bold text-slate-800">共同儲備基金 (死期)</span>：結餘約 360 萬。此為大廈的「法定保險箱」。</li>
+                                </ul>
+                                <div className="bg-cyan-50 p-2.5 rounded-lg border border-cyan-100 text-[13px] leading-relaxed mt-2 text-cyan-900">
+                                    <span className="font-bold">⚖️ 法律保障提示：</span><br/>
+                                    根據澳門《分層建築物管理法律制度》，要動用共同儲備基金，<span className="font-bold bg-cyan-200 px-1 rounded">必須依法召開業主大會</span>（最低法定出席率為佔樓宇總值 25%），並須獲 <span className="font-bold bg-cyan-200 px-1 rounded">出席業主過半數份額同意</span> 方可合法動用。因此，將資金撥入此戶口享有最高級別的安全保障，絕不會被輕易挪用。
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-100 bg-slate-50">
+                            <button onClick={onClose} className="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm">我明白了</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+        const App = () => {
+          const [activePage, setActivePage] = useState('calculator');
+          
+          const [yearMode, setYearMode] = useState(2026); 
+          const [calcRate, setCalcRate] = useState(1.6);
+          const [calcRebateMonths, setCalcRebateMonths] = useState(3);
+          const [selectedUnit, setSelectedUnit] = useState('F');
+          const [customArea, setCustomArea] = useState(1000);
+          
+          const [remunRate, setRemunRate] = useState(5.8);
+          const [expIncrease, setExpIncrease] = useState(0);
+          const [manualExpense, setManualExpense] = useState(''); 
+          const [includeOtherIncome, setIncludeOtherIncome] = useState(true);
+          const [otherIncomeValue, setOtherIncomeValue] = useState(179393);
+          const [useR2Bug, setUseR2Bug] = useState(false);
+          
+          const [showRules, setShowRules] = useState(false);
+
+          useEffect(() => {
+              if (yearMode === 2026) {
+                  setUseR2Bug(false);
+                  setRemunRate(7.0); 
+              } else {
+                  setRemunRate(5.8); 
+              }
+          }, [yearMode]);
+
+          return (
+            <div className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50 relative">
+              <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
+
+              <div className="flex-1 overflow-hidden relative">
+                {activePage === 'calculator' && (
+                  <div className="h-full overflow-y-auto pb-32">
+                    <CalculatorView 
+                      yearMode={yearMode} setYearMode={setYearMode}
+                      calcRate={calcRate} setCalcRate={setCalcRate}
+                      calcRebateMonths={calcRebateMonths} setCalcRebateMonths={setCalcRebateMonths}
+                      selectedUnit={selectedUnit} setSelectedUnit={setSelectedUnit}
+                      customArea={customArea} setCustomArea={setCustomArea}
+                      remunRate={remunRate} setRemunRate={setRemunRate}
+                      expIncrease={expIncrease} setExpIncrease={setExpIncrease}
+                      manualExpense={manualExpense} setManualExpense={setManualExpense}
+                      includeOtherIncome={includeOtherIncome} setIncludeOtherIncome={setIncludeOtherIncome}
+                      otherIncomeValue={otherIncomeValue} setOtherIncomeValue={setOtherIncomeValue}
+                      useR2Bug={useR2Bug} setUseR2Bug={setUseR2Bug}
+                      onOpenRules={() => setShowRules(true)}
+                    />
+                  </div>
+                )}
+                
+                {activePage === 'matrix' && (
+                  <div className="h-full flex flex-col pb-0">
+                    <MatrixView 
+                      yearMode={yearMode} setYearMode={setYearMode}
+                      remunRate={remunRate} expIncrease={expIncrease} 
+                      manualExpense={manualExpense} includeOtherIncome={includeOtherIncome} otherIncomeValue={otherIncomeValue}
+                      useR2Bug={useR2Bug} 
+                    />
+                  </div>
+                )}
+
+                {activePage === 'disclaimer' && (
+                  <div className="h-full overflow-y-auto pb-32">
+                    <DisclaimerView />
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom Nav */}
+              <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
+                <div className="flex">
+                  <button onClick={() => setActivePage('calculator')} className={`flex-1 pt-3 pb-4 flex flex-col items-center gap-1 transition-colors ${activePage === 'calculator' ? 'text-cyan-700' : 'text-slate-400'}`}>
+                    <CalcIcon size={22} />
+                    <span className="text-[11px] font-bold">計算器</span>
+                  </button>
+                  <button onClick={() => setActivePage('matrix')} className={`flex-1 pt-3 pb-4 flex flex-col items-center gap-1 transition-colors ${activePage === 'matrix' ? 'text-cyan-700' : 'text-slate-400'}`}>
+                    <TableIcon size={22} />
+                    <span className="text-[11px] font-bold">全景報表</span>
+                  </button>
+                  <button onClick={() => setActivePage('disclaimer')} className={`flex-1 pt-3 pb-4 flex flex-col items-center gap-1 transition-colors ${activePage === 'disclaimer' ? 'text-slate-800' : 'text-slate-400'}`}>
+                    <ShieldIcon size={22} />
+                    <span className="text-[11px] font-bold">免責聲明</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // --- Page 1: Calculator ---
+        const CalculatorView = ({ yearMode, setYearMode, calcRate, setCalcRate, calcRebateMonths, setCalcRebateMonths, selectedUnit, setSelectedUnit, customArea, setCustomArea, remunRate, setRemunRate, expIncrease, setExpIncrease, manualExpense, setManualExpense, includeOtherIncome, setIncludeOtherIncome, otherIncomeValue, setOtherIncomeValue, useR2Bug, setUseR2Bug, onOpenRules }) => {
+          
+          const currentUnitArea = selectedUnit === '自訂' ? customArea : UNIT_AREAS[selectedUnit];
+          
+          const baselineRebate = 4;
+          let baselinePaid = yearMode === 2026 
+                ? currentUnitArea * (2.0 * 7 + 2.0 * (5 - baselineRebate)) 
+                : currentUnitArea * 2.0 * (12 - baselineRebate);
+
+          let currentPaid = yearMode === 2026
+                ? currentUnitArea * (2.0 * 7 + calcRate * (5 - calcRebateMonths))
+                : currentUnitArea * calcRate * (12 - calcRebateMonths);
+          
+          const monthlyPaid = currentPaid / 12;
+          const monthlyDiff = (currentPaid - baselinePaid) / 12;
+          const isMoreExpensive = monthlyDiff > 0;
+
+          const data = calculateFinancials(calcRate, calcRebateMonths, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
+          const baselineData = calculateFinancials(2.0, 4, yearMode, remunRate, expIncrease, false, manualExpense, includeOtherIncome, otherIncomeValue);
+          
+          const commDiff = data.netCommission - baselineData.netCommission;
+          const isDeficit = data.opCashFlow < 0;
+          
+          const actualPaidMonthsText = yearMode === 2026 ? (12 - calcRebateMonths) : (12 - calcRebateMonths); // UI simplifies actual months paid concept
+
+          return (
+            <div className="p-3 md:p-4 space-y-4 max-w-lg mx-auto">
+              
+              {/* Year Switcher */}
+              <div className="bg-slate-200 p-1 rounded-xl flex shadow-inner">
+                  <button onClick={() => setYearMode(2026)} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${yearMode === 2026 ? 'bg-white text-cyan-800 shadow-sm' : 'text-slate-500'}`}>
+                      2026年 (7+5過渡期)
+                  </button>
+                  <button onClick={() => setYearMode(2027)} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${yearMode === 2027 ? 'bg-white text-cyan-800 shadow-sm' : 'text-slate-500'}`}>
+                      2027年起 (單一費率)
+                  </button>
+              </div>
+
+              {/* Compact Top Panel */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-sm font-bold text-slate-800">我家攤勻每月實繳</h2>
+                  <select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold rounded-md px-2 py-1 focus:outline-none">
+                    {Object.keys(UNIT_AREAS).map(unit => (
+                      <option key={unit} value={unit}>單位 {unit} (~{UNIT_AREAS[unit]}呎)</option>
+                    ))}
+                    <option value="自訂">✍️ 自訂呎數...</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 mb-3">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-500 mb-0.5">最終平均呎價</span>
+                        <span className="text-lg font-black text-slate-700">${data.finalAvgRate.toFixed(2)}</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200 mx-2"></div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] text-slate-500 mb-0.5">攤勻每月繳費</span>
+                        <span className="text-2xl font-black text-cyan-700">{formatCurrency(monthlyPaid)}</span>
+                    </div>
+                </div>
+
+                <div className={`rounded-lg p-2 text-center text-[11px] font-bold ${monthlyDiff === 0 ? 'bg-slate-100 text-slate-600' : isMoreExpensive ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>
+                    🆚 比 $2.0回4 方案：{monthlyDiff === 0 ? '每月實繳不變' : isMoreExpensive ? `🔴 每月需多付 ${formatCurrency(Math.abs(monthlyDiff))}` : `🟢 每月可節省 ${formatCurrency(Math.abs(monthlyDiff))}`}
+                </div>
+              </div>
+
+              {/* Core Sliders */}
+              <div className="bg-white rounded-2xl shadow-sm p-4 border border-slate-200 space-y-6">
+                <div>
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="text-sm font-bold text-slate-700">管理費基數單價 (每呎)</span>
+                    <span className="text-base font-black text-blue-600">${calcRate.toFixed(1)}</span>
+                  </div>
+                  <input type="range" min="1.5" max="2.5" step="0.1" value={calcRate} onChange={(e) => setCalcRate(parseFloat(e.target.value))} className="range-blue" />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="text-sm font-bold text-slate-700">預計回贈 (免交) 月數</span>
+                    <span className="text-base font-black text-emerald-600">{calcRebateMonths} 個月</span>
+                  </div>
+                  <input type="range" min="0" max="6" step="1" value={calcRebateMonths} onChange={(e) => setCalcRebateMonths(parseInt(e.target.value))} className="range-emerald" />
+                </div>
+              </div>
+
+              {/* Commission Exposure with Comparison */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex flex-col justify-center">
+                  <div className="flex justify-between items-start mb-2">
+                      <div>
+                          <div className="text-xs font-bold text-slate-800">🏢 預計物管公司實際收取酬金</div>
+                          <div className="text-[9px] text-slate-400 mt-0.5">免交期內免收酬金</div>
+                      </div>
+                      <div className="text-base font-black text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">{formatCurrency(data.netCommission)}</div>
+                  </div>
+                  {commDiff !== 0 && (
+                      <div className={`text-[10px] font-bold text-right ${commDiff > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                          🆚 比 $2.0回4 方案，管理處實抽酬金{commDiff > 0 ? `多了 ${formatCurrency(Math.abs(commDiff))} !` : `少了 ${formatCurrency(Math.abs(commDiff))}`}
+                      </div>
+                  )}
+              </div>
+
+              {/* Deficit / Success Banner (Dynamic) */}
+              {isDeficit ? (
+                  <div className="bg-rose-50 border-2 border-rose-400 rounded-xl p-3.5 flex gap-3 items-start shadow-sm">
+                      <AlertIcon className="text-rose-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                          <div className="text-sm font-black text-rose-800 mb-1">⚠️ 嚴重警告：日常營運出現赤字！</div>
+                          <div className="text-[11px] font-bold text-rose-700/90 leading-relaxed">
+                              此方案的實收管理費不足以支付基本開支。大廈需動用活期戶口老本填補 <span className="bg-rose-200 px-1 rounded">{formatCurrency(Math.abs(data.opCashFlow))}</span> 的當年差額。
+                          </div>
+                      </div>
+                  </div>
+              ) : (
+                  <div className="bg-emerald-50 border-2 border-emerald-400 rounded-xl p-3.5 flex gap-3 items-start shadow-sm">
+                      <div className="text-emerald-600 flex-shrink-0 mt-0.5 text-xl">✅</div>
+                      <div>
+                          <div className="text-sm font-black text-emerald-800 mb-1">財務健康狀態：優良</div>
+                          <div className="text-[11px] font-bold text-emerald-700/90 leading-relaxed">
+                              大廈僅需實收 <span className="bg-emerald-200 px-1 rounded">{actualPaidMonthsText} 個月</span> 的管理費，已完全足夠應付全年所有水電、人工及物管酬金，無須消耗活期戶口老本！
+                              <div className="mt-1.5 pt-1.5 border-t border-emerald-200/60 text-emerald-800/80">
+                                  💡 <span className="font-bold">假若官方帳面出現負值，請看本解釋!!</span><br/>
+                                  這是因為在免交期內，大廈依法需從「活期戶口」墊支 10% 撥入「共同儲備基金」。此舉實為大廈資產之<span className="font-bold bg-emerald-200/50 px-1 rounded">內部強制儲蓄轉移</span>，絕非真實的資金流失。
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  
+              )}
+
+              {/* Wealth Growth (Option C: Cyan / Slate Gradient) */}
+              <div className="bg-gradient-to-br from-cyan-900 to-slate-800 rounded-2xl p-5 shadow-lg text-white relative overflow-hidden">
+                <div className="text-sm font-bold text-cyan-100 mb-2">🏦 大廈當年總結餘 (實質大廈儲錢能力)</div>
+                <div className="text-4xl font-black text-white tracking-tight mb-4">
+                    {data.totalBalance > 0 ? '+' : ''}{formatCurrency(data.totalBalance)}
+                </div>
+                
+                {/* 放大並突顯的公式 */}
+                <div className="bg-black/20 rounded-lg p-3 border border-white/10">
+                    <div className="flex flex-col gap-2 text-xs font-bold text-cyan-100">
+                        <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-1.5">🔒 撥入共同儲備金</span>
+                            <span className="text-sm text-white">{formatCurrency(data.totalSinkingStored)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-cyan-500 text-white flex items-center justify-center text-[10px]">➕</div>
+                            <div className="flex-1 border-t border-cyan-400/30 border-dashed"></div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-1.5">📝 官方帳面盈虧</span>
+                            <span className={`text-sm ${data.accountingSurplus >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                {data.accountingSurplus >= 0 ? '+' : ''}{formatCurrency(data.accountingSurplus)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+              </div>
+
+              {/* Advanced Settings for 2027 */}
+              {yearMode === 2027 && (
+                  <details className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden group">
+                      <summary className="p-3 text-xs font-bold text-slate-700 flex justify-between items-center cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                          <span className="flex items-center gap-2"><SettingsIcon className="text-slate-500"/> 進階參數設定 (自行核算)</span>
+                          <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                      </summary>
+                      <div className="p-4 space-y-5 border-t border-slate-100">
+                          
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                              <div className="flex justify-between items-center mb-3">
+                                  <span className="text-xs font-bold text-slate-700">日常總開支 (澳門元)</span>
+                                  <div className="flex items-center gap-2">
+                                      {manualExpense !== '' && <button onClick={() => setManualExpense('')} className="text-[10px] text-rose-500 bg-rose-100 px-2 py-1 rounded font-bold">清除手動</button>}
+                                      <input type="number" placeholder={formatNum(data.baseExp)} value={manualExpense} onChange={e => setManualExpense(e.target.value)} className="w-24 border border-slate-300 rounded px-2 py-1 text-xs text-right font-bold text-slate-700 focus:border-cyan-600 focus:outline-none" />
+                                  </div>
+                              </div>
+                              <div className={`transition-opacity ${manualExpense !== '' ? 'opacity-30 pointer-events-none' : ''}`}>
+                                  <div className="flex justify-between items-center mb-2">
+                                      <span className="text-[10px] font-bold text-slate-500">或按通脹率調整 (%)</span>
+                                      <span className="text-xs font-bold text-cyan-700">+{expIncrease}%</span>
+                                  </div>
+                                  <input type="range" min="-10" max="20" step="1" value={expIncrease} onChange={e => setExpIncrease(Number(e.target.value))} className="range-blue" />
+                              </div>
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                  <input type="checkbox" checked={includeOtherIncome} onChange={e => setIncludeOtherIncome(e.target.checked)} className="w-4 h-4 accent-cyan-700" />
+                                  <span className="text-xs font-bold text-slate-700">包含會所/利息等收入</span>
+                              </label>
+                              <input type="number" disabled={!includeOtherIncome} value={otherIncomeValue} onChange={e => setOtherIncomeValue(Number(e.target.value))} className="w-24 border border-slate-300 rounded px-2 py-1 text-xs text-right font-bold text-slate-700 disabled:opacity-50 focus:border-cyan-600 focus:outline-none" />
+                          </div>
+
+                          <div>
+                              <div className="flex justify-between items-center mb-2">
+                                  <span className="text-xs font-bold text-slate-700">酬金比例 (%)</span>
+                                  <span className="text-xs font-bold text-cyan-700">{remunRate}%</span>
+                              </div>
+                              <input type="range" min="0" max="10" step="0.1" value={remunRate} onChange={e => setRemunRate(Number(e.target.value))} className="range-blue" />
+                          </div>
+
+                          <label className="flex items-start gap-2 cursor-pointer p-2.5 bg-amber-50 rounded-lg border border-amber-200">
+                              <input type="checkbox" checked={useR2Bug} onChange={e => setUseR2Bug(e.target.checked)} className="mt-0.5 w-4 h-4 accent-amber-600" />
+                              <div className="text-[11px] text-amber-800 font-bold leading-tight">還原官方 R2 報表錯誤計算法<br/><span className="font-normal text-amber-700 text-[10px]">模擬用2026高基數計算2027酬金之誤差</span></div>
+                          </label>
+                      </div>
+                  </details>
+              )}
+
+              <button onClick={onOpenRules} className="w-full py-3.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm active:bg-slate-50 transition-colors">
+                  <InfoIcon className="text-cyan-700" /> 了解計算基準與物管財務規則
+              </button>
+            </div>
+          );
+        };
+
+        // --- Page 2: Matrix ---
+        const MatrixView = ({ yearMode, setYearMode, remunRate, expIncrease, manualExpense, includeOtherIncome, otherIncomeValue, useR2Bug }) => {
+          
+          const SCENARIOS_2026 = [
+            { rate: 2.0, rebate: 4, label: "$2.0 (回4)", isTarget: true },
+            { rate: 1.8, rebate: 4, label: "$1.8 (回4)", isTarget: false },
+            { rate: 1.8, rebate: 3, label: "$1.8 (回3)", isTarget: false },
+            { rate: 1.7, rebate: 3, label: "$1.7 (回3)", isTarget: false },
+            { rate: 1.6, rebate: 4, label: "$1.6 (回4)", isTarget: true }, 
+            { rate: 1.6, rebate: 3, label: "$1.6 (回3)", isTarget: true },
+            { rate: 1.6, rebate: 2, label: "$1.6 (回2)", isTarget: false }
+          ];
+
+          const SCENARIOS_2027 = [
+            { rate: 2.0, rebate: 4, label: "$2.0 (回4)", isTarget: true },
+            { rate: 1.8, rebate: 4, label: "$1.8 (回4)", isTarget: false },
+            { rate: 1.8, rebate: 3, label: "$1.8 (回3)", isTarget: true },
+            { rate: 1.7, rebate: 3, label: "$1.7 (回3)", isTarget: false },
+            { rate: 1.6, rebate: 3, label: "$1.6 (回3)", isTarget: false },
+            { rate: 1.6, rebate: 2, label: "$1.6 (回2)", isTarget: true }
+          ];
+
+          const scenarios = yearMode === 2026 ? SCENARIOS_2026 : SCENARIOS_2027;
+
+          const thTopLeftClass = "sticky top-0 left-0 z-40 bg-slate-800 text-white font-bold text-xs py-3 px-2 border-b border-r border-slate-700 align-middle sticky-header-shadow sticky-col-shadow w-[115px] min-w-[115px] max-w-[115px] bg-clip-padding";
+          const tdLeftClass = "sticky left-0 z-20 font-bold text-slate-700 text-[10px] leading-tight py-3 px-2 border-r border-b border-slate-200 sticky-col-shadow w-[115px] min-w-[115px] max-w-[115px] whitespace-normal break-words bg-clip-padding";
+          
+          return (
+            <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
+              <div className="px-3 pt-3 pb-2 bg-white shadow-sm z-20 flex-shrink-0">
+                <div className="flex justify-between items-center mb-2">
+                    <h1 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                      <TableIcon size={18} className="text-cyan-700" /> 全景報表
+                    </h1>
+                    <div className="bg-slate-100 p-0.5 rounded-lg flex border border-slate-200">
+                        <button onClick={() => setYearMode(2026)} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${yearMode === 2026 ? 'bg-white text-cyan-800 shadow-sm' : 'text-slate-500'}`}>2026</button>
+                        <button onClick={() => setYearMode(2027)} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${yearMode === 2027 ? 'bg-white text-cyan-800 shadow-sm' : 'text-slate-500'}`}>2027</button>
+                    </div>
+                </div>
+                <p className="text-[10px] text-slate-500">已用 <span className="font-bold text-amber-600 bg-amber-50 px-1 rounded">專屬底色</span> 標記焦點對比方案。左右滑動查看完整數據。</p>
+                {yearMode === 2027 && (
+                    <div className="mt-2 text-[9px] text-cyan-700 bg-cyan-50 p-1.5 rounded flex items-start gap-1 border border-cyan-100">
+                        <span className="mt-0.5">💡</span>
+                        <span>註：2027年之運算結果，已動態同步「第一頁計算器」中之進階參數（如手動開支、通脹率、酬金比例等）。</span>
+                    </div>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-auto bg-slate-200 relative table-scroll-container">
+                <div className="min-w-max pb-40">
+                  <table className="w-max min-w-full border-separate border-spacing-0 bg-white">
+                    <thead>
+                      <tr>
+                        <th className={thTopLeftClass}>財務指標 \ 方案</th>
+                        {scenarios.map((s, idx) => (
+                          <th key={idx} className={`sticky top-0 z-30 font-bold text-[11px] text-center py-2 px-1 border-b border-slate-300 min-w-[75px] sticky-header-shadow bg-clip-padding ${s.isTarget ? 'bg-amber-100 text-amber-900 border-x border-amber-300' : 'bg-slate-100 text-slate-800'}`}>
+                            {s.isTarget && <div className="text-[8px] bg-amber-500 text-white rounded-full px-1.5 py-0.5 w-max mx-auto mb-0.5">📌 焦點</div>}
+                            <div>{s.label.split(' ')[0]}</div>
+                            <div className={`text-[9px] mt-0.5 ${s.isTarget ? 'text-amber-700' : 'text-slate-500'}`}>{s.label.split(' ')[1]}</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* 首行：最終呎價 */}
+                      <tr>
+                        <td className={`${tdLeftClass} bg-slate-50 border-b border-slate-300`}>👑 最終攤勻呎價</td>
+                        {scenarios.map((s, idx) => {
+                          const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
+                          return <td key={idx} className={`py-2 px-1.5 text-center border-b border-slate-300 text-[12px] font-black ${s.isTarget ? 'bg-amber-50/80 border-x border-amber-300 text-amber-900' : 'bg-slate-50 text-slate-700'}`}>
+                              ${data.finalAvgRate.toFixed(2)}
+                          </td>
+                        })}
+                      </tr>
+
+                      <tr>
+                        <td className={`${tdLeftClass} bg-cyan-50`}>預計物管實際收取酬金</td>
+                        {scenarios.map((s, idx) => {
+                          const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
+                          return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums ${s.isTarget ? 'bg-amber-50/50 border-x border-amber-200 border-b-amber-200 font-bold text-amber-900' : 'bg-cyan-50/30 border-slate-100 text-slate-700'}`}>
+                              {formatNum(data.netCommission)}
+                          </td>
+                        })}
+                      </tr>
+
+                      <tr>
+                        <td className={`${tdLeftClass} bg-white`}>日常營運純現金結餘<br/><span className="text-[8px] text-slate-400 font-normal">(大於0即無須動用老本)</span></td>
+                        {scenarios.map((s, idx) => {
+                          const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
+                          const isPos = data.opCashFlow >= 0;
+                          return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums font-bold ${s.isTarget ? 'bg-amber-50/50 border-x border-amber-200 border-b-amber-200' : 'bg-white border-slate-100'} ${isPos ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {isPos ? '+' : ''}{formatNum(data.opCashFlow)}
+                          </td>
+                        })}
+                      </tr>
+
+                      <tr>
+                        <td className={`${tdLeftClass} bg-slate-50 border-b-2 border-slate-300`}>📝 官方顯示帳面盈虧<br/><span className="text-[8px] text-slate-400 font-normal">(日常結餘 減 墊支儲備)</span></td>
+                        {scenarios.map((s, idx) => {
+                          const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
+                          return <td key={idx} className={`py-2.5 px-1.5 text-center border-b-2 text-[11px] tabular-nums font-bold ${s.isTarget ? 'bg-amber-50 border-x border-amber-300 border-b-amber-400 text-slate-700' : 'bg-slate-50 border-slate-300 text-slate-600'}`}>
+                              {data.accountingSurplus >= 0 ? '+' : ''}{formatNum(data.accountingSurplus)}
+                          </td>
+                        })}
+                      </tr>
+
+                      <tr>
+                        <td className={`${tdLeftClass} bg-blue-50`}>🔒 當年撥入死期儲備金<br/><span className="text-[8px] text-blue-600/70 font-normal">(強制儲蓄總額)</span></td>
+                        {scenarios.map((s, idx) => {
+                          const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
+                          return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums font-bold text-blue-700 ${s.isTarget ? 'bg-amber-100/50 border-x border-amber-300 border-b-amber-300' : 'bg-blue-50/50 border-slate-200'}`}>
+                              +{formatNum(data.totalSinkingStored)}
+                          </td>
+                        })}
+                      </tr>
+
+                      <tr>
+                        <td className={`${tdLeftClass} bg-cyan-50 border-b-2 border-slate-400`}>
+                          <div className="text-cyan-900 font-black">🏦 大廈當年總結餘</div>
+                          <span className="text-[8px] text-cyan-700/70 font-normal">(實質儲錢能力)</span>
+                        </td>
+                        {scenarios.map((s, idx) => {
+                          const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
+                          return <td key={idx} className={`py-3 px-1.5 text-center border-b-2 text-[12px] tabular-nums font-black ${s.isTarget ? 'bg-amber-100 border-x border-amber-400 border-b-amber-500 text-amber-900' : 'bg-cyan-50 border-slate-400 text-cyan-800'}`}>
+                            +{formatNum(data.totalBalance)}
+                          </td>
+                        })}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // --- Page 3: Disclaimer ---
+        const DisclaimerView = () => {
+          return (
+            <div className="p-4 md:p-6 space-y-6 max-w-lg mx-auto pb-32">
+              <header className="pt-2 pb-1">
+                <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  <ShieldIcon size={24} className="text-slate-700" />
+                  免責聲明及使用條款
+                </h1>
+              </header>
+
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-5 text-sm text-slate-600 leading-relaxed">
+                <div className="space-y-1.5">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-1.5"><span className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-xs">1</span> 獨立分析工具</h3>
+                  <p className="pl-6">本網頁為獨立開發之輔助精算工具，旨在協助業主以透明、客觀之互動方式了解物管財務運作邏輯。本網頁並非物業管理公司或官方機構之正式財務文件。</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-1.5"><span className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-xs">2</span> 數據僅供參考</h3>
+                  <p className="pl-6">工具內所有運算邏輯皆依據澳門現行物管常規（如90/10拆分）建構。惟實際收支將受多項變數影響，開發者不保證試算數據之絕對精準，最終帳目請以大會決議及官方報告為準。</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-1.5"><span className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-xs">3</span> 隱私與責任豁免</h3>
+                  <p className="pl-6">本程式為純前端運行，絕對不會收集、儲存或傳送任何使用者之個人輸入數據。對於因參考本工具數據而作出之任何個人決策，開發者概不負上任何法律責任。</p>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
