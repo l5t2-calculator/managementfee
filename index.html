@@ -275,6 +275,15 @@
                                     )}
                                 </div>
 
+                                {/* ADDED: 全年撥入死期儲備金 */}
+                                <div className="flex justify-between py-2 border-b-2 border-slate-200 text-[11px] items-center bg-blue-50/80 -mx-3 px-3">
+                                    <div className="pr-2 flex-1">
+                                        <div className="font-bold text-blue-800">(+) 全年撥入共同儲備金總額</div>
+                                        <div className="text-[8px] text-blue-600/80 mt-0.5">(全年度強制儲蓄總額)</div>
+                                    </div>
+                                    <div className="font-black text-blue-700 min-w-[80px] text-right">+{formatNum(data.totalSinkingStored)}</div>
+                                </div>
+
                                 <div className="py-3 bg-gradient-to-r from-cyan-800 to-slate-800 text-white -mx-3 -mb-3 px-3 rounded-b-xl">
                                     <div className="flex justify-between items-center">
                                         <div className="font-bold text-[13px] flex items-center gap-1.5"><ShieldIcon size={16}/> 全年大廈最終總結餘增長</div>
@@ -689,7 +698,7 @@
                         <td className={`${tdLeftClass} bg-cyan-50 border-b border-slate-100`}>預計物管實際收取酬金</td>
                         {scenarios.map((s, idx) => {
                           const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
-                          return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums ${s.isTarget ? 'bg-amber-50/50 border-x border-amber-200 border-b-amber-200 font-bold text-amber-900' : 'bg-cyan-50/30 border-slate-100 text-slate-700'}`}>
+                          return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums ${s.isTarget ? 'bg-amber-50/50 border-x border-amber-200 border-b-amber-200 font-bold text-amber-900' : 'bg-cyan-50 border-slate-100 text-slate-700'}`}>
                               {formatNum(data.netCommission)}
                           </td>
                         })}
@@ -720,7 +729,7 @@
                         <td className={`${tdLeftClass} bg-blue-50 border-b border-slate-200`}>🔒 當年撥入死期儲備金<br/><span className="text-[8px] text-blue-600/70 font-normal">(強制儲蓄總額)</span></td>
                         {scenarios.map((s, idx) => {
                           const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
-                          return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums font-bold text-blue-700 ${s.isTarget ? 'bg-amber-100/50 border-x border-amber-300 border-b-amber-300' : 'bg-blue-50/50 border-slate-200'}`}>
+                          return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums font-bold text-blue-700 ${s.isTarget ? 'bg-amber-100/50 border-x border-amber-300 border-b-amber-300' : 'bg-blue-50 border-slate-200'}`}>
                               +{formatNum(data.totalSinkingStored)}
                           </td>
                         })}
@@ -764,11 +773,15 @@
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="font-bold text-slate-800 flex items-center gap-1.5"><span className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-xs">2</span> 數據僅供參考</h3>
-                  <p className="pl-6">工具內所有運算邏輯皆依據澳門現行物管常規（如90/10拆分）建構。惟實際收支將受多項變數影響，開發者不保證試算數據之絕對精準，最終帳目請以大會決議及官方報告為準。本工具可能會根據實際情況進行持續優化及數據更新，恕不另行通知。</p>
+                  <p className="pl-6">工具內所有運算邏輯皆依據澳門現行物管常規（如90/10拆分）建構。惟實際收支將受多項變數影響，開發者不保證試算數據之絕對精準，最終帳目請以大會決議及官方報告為準。</p>
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="font-bold text-slate-800 flex items-center gap-1.5"><span className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-xs">3</span> 隱私與責任豁免</h3>
                   <p className="pl-6">本程式為純前端運行，絕對不會收集、儲存或傳送任何使用者之個人輸入數據。對於因參考本工具數據而作出之任何個人決策，開發者概不負上任何法律責任。</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-1.5"><span className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-xs">4</span> 持續更新聲明</h3>
+                  <p className="pl-6">本工具及內含之運算模型可能會根據實際情況（如最新取得之官方數據或法規修正）進行持續優化及不定期更新，所有更新將不作另行通知，請以網頁最新顯示之版本為準。</p>
                 </div>
               </div>
             </div>
