@@ -28,8 +28,13 @@
     </style>
 </head>
 <body class="text-slate-800 antialiased"> 
-    <div id="root"></div>
-
+    <div id="root">
+        <div style="display:flex; height:100vh; width:100vw; align-items:center; justify-content:center; color:#475569; font-size:14px; font-weight:bold; flex-direction:column; gap:10px; background-color:#f8fafc;">
+            <svg style="animation: spin 1s linear infinite; height: 24px; width: 24px; color: #0e7490;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            系統載入中...
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+        </div>
+    </div>
     <script type="text/babel">
         const { useState, useEffect } = React;
 
@@ -478,7 +483,14 @@
                     <option value="自訂">✍️ 自訂呎數...</option>
                   </select>
                 </div>
-
+                  
+                {selectedUnit === '自訂' && (
+                    <div className="flex justify-end items-center mb-3 -mt-1 animate-[slideUp_0.2s_ease-out]">
+                        <span className="text-[10px] font-bold text-slate-500 mr-2">請輸入面積 (呎):</span>
+                        <input type="number" value={customArea} onChange={e => setCustomArea(Number(e.target.value))} className="w-20 bg-white border border-slate-300 rounded-md px-2 py-1 text-xs text-right font-bold text-cyan-700 focus:border-cyan-600 focus:outline-none shadow-inner" />
+                    </div>
+                )}
+                  
                 <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 mb-3">
                     <div className="flex flex-col">
                         <span className="text-[10px] text-slate-500 mb-0.5">最終平均呎價</span>
@@ -689,9 +701,17 @@
                 </div>
                 <p className="text-[10px] text-slate-500">已用 <span className="font-bold text-amber-600 bg-amber-50 px-1 rounded">專屬底色</span> 標記焦點對比方案。左右滑動查看完整數據。</p>
                 {yearMode === 2027 && (
-                    <div className="mt-2 text-[9px] text-cyan-700 bg-cyan-50 p-1.5 rounded flex items-start gap-1 border border-cyan-100">
-                        <span className="mt-0.5">💡</span>
-                        <span>註：2027年之運算結果，已動態同步「第一頁計算器」中之進階參數（如手動開支、通脹率、酬金比例等）。</span>
+                    <div className="mt-2 text-[9px] text-cyan-700 bg-cyan-50 p-2 rounded-lg flex flex-col gap-1.5 border border-cyan-100 shadow-sm">
+                        <div className="flex items-start gap-1">
+                            <span className="mt-0.5">💡</span>
+                            <span>註：本表之運算結果，已動態同步「第一頁計算器」中之進階參數（如通脹率等）。</span>
+                        </div>
+                        {useR2Bug && (
+                            <div className="flex items-start gap-1 text-rose-600 font-bold bg-rose-50 p-1 rounded border border-rose-100">
+                                <span className="mt-0.5">⚠️</span>
+                                <span>您已開啟「R2錯誤計算法」，本表酬金已套用該官方誤差。</span>
+                            </div>
+                        )}
                     </div>
                 )}
               </div>
@@ -724,7 +744,10 @@
                       </tr>
 
                       <tr>
-                        <td className={`${tdLeftClass} bg-cyan-50 border-b border-slate-100`}>預計物管實際收取酬金</td>
+                        <td className={`${tdLeftClass} bg-cyan-50 border-b border-slate-100`}>
+                            預計物管實際收取酬金
+                            {yearMode === 2027 && useR2Bug && <div className="text-[8px] text-rose-500 font-bold mt-0.5">(⚠️ 已套用算式誤差)</div>}
+                        </td>
                         {scenarios.map((s, idx) => {
                           const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
                           return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums ${s.isTarget ? 'bg-amber-50/50 border-x border-amber-200 border-b-amber-200 font-bold text-amber-900' : 'bg-cyan-50 border-slate-100 text-slate-700'}`}>
@@ -734,7 +757,12 @@
                       </tr>
 
                       <tr>
-                        <td className={`${tdLeftClass} bg-white border-b border-slate-100`}>日常營運純現金結餘<br/><span className="text-[8px] text-slate-400 font-normal">(大於0即無須動用老本)</span></td>
+                        <td className={`${tdLeftClass} bg-white border-b border-slate-100`}>
+                            日常營運純現金結餘<br/>
+                            <span className="text-[8px] text-slate-400 font-normal">(大於0即無須動用老本)</span>
+                            {yearMode === 2027 && manualExpense !== '' && <div className="text-[8px] text-amber-500 font-bold mt-0.5">(⚙️ 套用自訂開支)</div>}
+                            {yearMode === 2027 && manualExpense === '' && expIncrease !== 0 && <div className="text-[8px] text-amber-500 font-bold mt-0.5">(⚙️ 套用 {expIncrease}% 通脹)</div>}
+                        </td>
                         {scenarios.map((s, idx) => {
                           const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
                           const isPos = data.opCashFlow >= 0;
