@@ -9,20 +9,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 強制隱藏所有元素的滾動條，營造 Native App 手感 */
-        * { 
-            scrollbar-width: none !important; 
-            -ms-overflow-style: none !important; 
-            -webkit-tap-highlight-color: transparent; 
-        }
-        *::-webkit-scrollbar { 
-            display: none !important; 
-        }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f8fafc; 
-            overscroll-behavior: none; 
-        }
+        * { scrollbar-width: none !important; -ms-overflow-style: none !important; -webkit-tap-highlight-color: transparent; }
+        *::-webkit-scrollbar { display: none !important; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; overscroll-behavior: none; }
         
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); cursor: pointer; margin-top: -9px; }
@@ -52,6 +41,7 @@
         const SettingsIcon = ({size=16, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>);
         const CloseIcon = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
         const AlertIcon = ({size=24, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>);
+        const FileTextIcon = ({size=16, className=""}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>);
 
         // --- Constants & Math ---
         const TOTAL_AREA = 335130; 
@@ -101,27 +91,30 @@
             let accountingSurplus = opCashFlow + sinkingAdvance; 
             let totalSinkingStored = grossSinkingBase; 
             
-            // 【核心公式】：大廈當年總結餘 = 當年撥入死期儲備金 + 官方帳面盈虧
             let totalBalance = totalSinkingStored + accountingSurplus; 
 
             let finalAvgRate = year === 2026 
                 ? ((2.0 * 7 + rate * (5 - rebate)) / 12)
                 : (rate * (12 - rebate) / 12);
 
-            return { opCashFlow, sinkingAdvance, accountingSurplus, totalBalance, netCommission, totalSinkingStored, finalAvgRate, baseExp };
+            return { 
+                opCashFlow, sinkingAdvance, accountingSurplus, totalBalance, 
+                netCommission, totalSinkingStored, finalAvgRate, baseExp,
+                grossMgmtFeeBase, actualOtherIncome, grossCommission, rebateMgmt, commissionRebate, rebateSinking
+            };
         };
 
-        // --- Rules Modal ---
+        // --- Modals ---
         const RulesModal = ({ isOpen, onClose }) => {
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
-                    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-slate-800 text-white p-4 flex justify-between items-center">
+                    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        <div className="bg-slate-800 text-white p-4 flex justify-between items-center flex-shrink-0">
                             <h3 className="font-bold flex items-center gap-2"><InfoIcon/> 計算基準與物管規則</h3>
                             <button onClick={onClose} className="p-1 text-white/70 hover:text-white"><CloseIcon size={20}/></button>
                         </div>
-                        <div className="p-5 space-y-4 text-sm text-slate-700 leading-relaxed max-h-[70vh] overflow-y-auto">
+                        <div className="p-5 space-y-4 text-sm text-slate-700 leading-relaxed overflow-y-auto">
                             <div className="space-y-1">
                                 <h4 className="font-bold text-cyan-700">1.「90/10 法定拆分法則」</h4>
                                 <p>業主繳交之管理費總額中，<span className="font-bold">90%</span> 撥入日常營運活期戶口（物管公司按此金額抽佣）；<span className="font-bold">10%</span> 依法強制存入共同儲備基金（死期戶口，絕對免佣）。</p>
@@ -147,7 +140,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div className="p-4 border-t border-slate-100 bg-slate-50">
+                        <div className="p-4 border-t border-slate-100 bg-slate-50 flex-shrink-0">
                             <button onClick={onClose} className="w-full py-2.5 bg-slate-800 text-white rounded-lg font-bold text-sm">我明白了</button>
                         </div>
                     </div>
@@ -155,7 +148,151 @@
             );
         };
 
-        // --- Main App ---
+        const DetailedTableModal = ({ isOpen, onClose, data, calcRate, calcRebateMonths, yearMode, remunRate }) => {
+            if (!isOpen) return null;
+            
+            const rateStr = calcRate.toFixed(1);
+            const rate90Str = (calcRate * 0.9).toFixed(2);
+            const rate10Str = (calcRate * 0.1).toFixed(2);
+            const commRateStr = yearMode === 2026 ? '7%' : `${remunRate}%`;
+            const totalIncome = data.grossMgmtFeeBase + data.actualOtherIncome;
+            const surplusBeforeRebate = totalIncome - data.baseExp - data.grossCommission;
+
+            const rowClass = "flex justify-between py-2 border-b border-slate-100 text-[11px] items-center";
+            const labelClass = "pr-2 flex-1";
+            const valClass = "font-black text-right min-w-[80px]";
+
+            return (
+                <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}>
+                    <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-[slideUp_0.3s_ease-out]" onClick={e => e.stopPropagation()}>
+                        <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white p-4 flex justify-between items-center flex-shrink-0 shadow-md">
+                            <div>
+                                <h3 className="font-bold flex items-center gap-2 text-sm"><FileTextIcon/> 動態計算明細 (官方報表格式)</h3>
+                                <div className="text-[10px] text-slate-300 mt-1">目前設定：{yearMode}年 | ${rateStr} 回{calcRebateMonths}個月</div>
+                            </div>
+                            <button onClick={onClose} className="p-1 text-white/70 hover:text-white bg-white/10 rounded-full"><CloseIcon size={20}/></button>
+                        </div>
+                        
+                        <div className="p-4 overflow-y-auto bg-slate-50 text-slate-700">
+                            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm mb-4">
+                                <div className="text-[10px] text-slate-400 mb-1">單位：澳門元 (MOP)</div>
+                                
+                                <div className="flex justify-between py-2 border-b-2 border-slate-200 text-[12px] items-center bg-amber-50 -mx-3 px-3">
+                                    <div className="font-bold text-amber-900">👑 最終全年平均管理費/呎 <span className="font-normal text-[9px]">(計算回贈後)</span></div>
+                                    <div className="font-black text-amber-700">${data.finalAvgRate.toFixed(2)}</div>
+                                </div>
+
+                                <div className={rowClass}>
+                                    <div className={labelClass}>
+                                        <div className="font-bold">(+) 全年管理費收入總額</div>
+                                        <div className="text-[9px] text-slate-400 mt-0.5">(不含儲備基金，以 ${rateStr} 為例，即以 ${rate90Str} 計算之結果)</div>
+                                    </div>
+                                    <div className={valClass}>{formatNum(data.grossMgmtFeeBase)}</div>
+                                </div>
+                                <div className={rowClass}>
+                                    <div className={labelClass}>(+) 會所、利息、其他收入</div>
+                                    <div className={valClass}>{formatNum(data.actualOtherIncome)}</div>
+                                </div>
+                                <div className={`${rowClass} bg-slate-100 -mx-3 px-3 font-bold`}>
+                                    <div className={labelClass}>(=) 總收入</div>
+                                    <div className={valClass}>{formatNum(totalIncome)}</div>
+                                </div>
+
+                                <div className={rowClass}>
+                                    <div className={labelClass}>(-) 全年營運總支出 <span className="text-[9px] font-normal text-slate-400">(固定開支，不含管理人酬金)</span></div>
+                                    <div className={`${valClass} text-rose-600`}>-{formatNum(data.baseExp)}</div>
+                                </div>
+                                <div className={rowClass}>
+                                    <div className={labelClass}>(-) 全年管理人應收酬金 <span className="text-[9px] font-normal text-slate-400">(按總收入 {commRateStr} 計，未扣回贈)</span></div>
+                                    <div className={`${valClass} text-rose-600`}>-{formatNum(data.grossCommission)}</div>
+                                </div>
+                                <div className={`${rowClass} bg-slate-100 -mx-3 px-3 font-bold`}>
+                                    <div className={labelClass}>(=) 本年度盈餘 <span className="text-[9px] font-normal text-slate-500">(未扣管理費回贈前)</span></div>
+                                    <div className={valClass}>{formatNum(surplusBeforeRebate)}</div>
+                                </div>
+
+                                <div className="py-2 border-b border-slate-100 text-[11px]">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <div className="font-bold text-indigo-700">🏛️ 回贈月數</div>
+                                        <div className="font-black text-indigo-700">{calcRebateMonths} 個月</div>
+                                    </div>
+                                    <div className="pl-4 border-l-2 border-indigo-100 space-y-2 mt-2">
+                                        <div className="flex justify-between items-center">
+                                            <div className="pr-2">
+                                                <div className="font-bold">(-) 回贈月數支付之管理費</div>
+                                                <div className="text-[8px] text-slate-400 mt-0.5">(本欄僅計算管理費，不包含儲備金，以 ${rateStr} 為例，即 ${rate90Str} x 回贈月數)</div>
+                                            </div>
+                                            <div className="font-black text-rose-600 min-w-[70px] text-right">-{formatNum(data.rebateMgmt)}</div>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <div className="pr-2">
+                                                <div className="font-bold">(+) 管理人酬金回贈</div>
+                                                <div className="text-[8px] text-slate-400 mt-0.5">(免交期內零抽佣退回)</div>
+                                            </div>
+                                            <div className="font-black text-emerald-600 min-w-[70px] text-right">+{formatNum(data.commissionRebate)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="py-2.5 border-b-2 border-slate-200 bg-cyan-50/50 -mx-3 px-3">
+                                    <div className="flex justify-between items-center font-bold text-cyan-800 text-[12px]">
+                                        <div>(=)(A) 日常營運純現金結餘</div>
+                                        <div className="font-black">{data.opCashFlow >= 0 ? '+' : ''}{formatNum(data.opCashFlow)}</div>
+                                    </div>
+                                    <div className="text-[8px] text-cyan-600 mt-0.5">(即以上內容的總數 / 大於0 = 住戶實交之現金完全足夠支付水電人工及佣金)</div>
+                                </div>
+
+                                <div className={rowClass}>
+                                    <div className={labelClass}>
+                                        <div className="font-bold">(-) (B) 回贈月數支付之儲備金</div>
+                                        <div className="text-[8px] text-slate-400 mt-0.5">(本欄僅計算儲備金，以 ${rateStr} 為例，即 ${rate10Str} x 回贈月數)</div>
+                                    </div>
+                                    <div className={`${valClass} text-rose-600`}>{formatNum(data.sinkingAdvance)}</div>
+                                </div>
+
+                                <div className="py-2.5 border-b-2 border-slate-200 bg-slate-100 -mx-3 px-3">
+                                    <div className="flex justify-between items-center font-bold text-slate-800 text-[12px]">
+                                        <div>(=) (A) + (B) = 本年度盈餘 <span className="text-[9px] font-normal text-slate-500">(回贈後帳面淨值)*</span></div>
+                                        <div className={`font-black ${data.accountingSurplus >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{data.accountingSurplus >= 0 ? '+' : ''}{formatNum(data.accountingSurplus)}</div>
+                                    </div>
+                                </div>
+
+                                {/* Dynamic Explanation Block */}
+                                <div className="my-3">
+                                    {data.accountingSurplus >= 0 ? (
+                                        <div className="bg-emerald-50 border border-emerald-200 rounded p-2 text-[10px] text-emerald-800 flex gap-1.5 items-start">
+                                            <span className="text-emerald-500 font-bold">✅</span>
+                                            <div><span className="font-bold">盈餘為正，大廈財政極度健康。</span>日常營運收支平衡外，帳面仍有剩餘價值。</div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-2.5 text-[10px] text-emerald-800 flex gap-2 items-start shadow-sm">
+                                            <span className="text-emerald-600 font-bold text-sm mt-0.5">💡</span>
+                                            <div className="leading-relaxed">
+                                                <span className="font-bold">為何官方帳面會出現負值？</span><br/>
+                                                如出現「負盈餘」，是因為在免交期內，大廈依法需從「活期戶口」墊支 10% 撥入「共同儲備基金」。此舉實為大廈資產之<span className="font-bold bg-emerald-200/60 px-1 rounded">內部強制儲蓄轉移</span>，換句話說，這一年只是把錢存進了死期保險箱，絕非真實的資金流失！
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="py-3 bg-gradient-to-r from-cyan-800 to-slate-800 text-white -mx-3 -mb-3 px-3 rounded-b-xl">
+                                    <div className="flex justify-between items-center">
+                                        <div className="font-bold text-[13px] flex items-center gap-1.5"><ShieldIcon size={16}/> 全年大廈最終總結餘增長</div>
+                                        <div className="font-black text-lg">+{formatNum(data.totalBalance)}</div>
+                                    </div>
+                                    <div className="text-[9px] text-cyan-200 mt-1 opacity-80 pl-5">(即：本年度盈餘 + 全年撥入儲備金總額)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <style dangerouslySetInnerHTML={{__html: `
+                            @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                        `}} />
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App Component ---
         const App = () => {
           const [activePage, setActivePage] = useState('calculator');
           
@@ -249,6 +386,8 @@
         // --- Page 1: Calculator ---
         const CalculatorView = ({ yearMode, setYearMode, calcRate, setCalcRate, calcRebateMonths, setCalcRebateMonths, selectedUnit, setSelectedUnit, customArea, setCustomArea, remunRate, setRemunRate, expIncrease, setExpIncrease, manualExpense, setManualExpense, includeOtherIncome, setIncludeOtherIncome, otherIncomeValue, setOtherIncomeValue, useR2Bug, setUseR2Bug, onOpenRules }) => {
           
+          const [isDetailedModalOpen, setIsDetailedModalOpen] = useState(false);
+
           const currentUnitArea = selectedUnit === '自訂' ? customArea : UNIT_AREAS[selectedUnit];
           
           const baselineRebate = 4;
@@ -270,11 +409,17 @@
           const commDiff = data.netCommission - baselineData.netCommission;
           const isDeficit = data.opCashFlow < 0;
           
-          const actualPaidMonthsText = yearMode === 2026 ? (12 - calcRebateMonths) : (12 - calcRebateMonths); // UI simplifies actual months paid concept
+          const actualPaidMonthsText = yearMode === 2026 ? (12 - calcRebateMonths) : (12 - calcRebateMonths); 
 
           return (
             <div className="p-3 md:p-4 space-y-4 max-w-lg mx-auto">
               
+              <DetailedTableModal 
+                  isOpen={isDetailedModalOpen} 
+                  onClose={() => setIsDetailedModalOpen(false)} 
+                  data={data} calcRate={calcRate} calcRebateMonths={calcRebateMonths} yearMode={yearMode} remunRate={remunRate} 
+              />
+
               {/* Year Switcher */}
               <div className="bg-slate-200 p-1 rounded-xl flex shadow-inner">
                   <button onClick={() => setYearMode(2026)} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${yearMode === 2026 ? 'bg-white text-cyan-800 shadow-sm' : 'text-slate-500'}`}>
@@ -374,10 +519,9 @@
                           </div>
                       </div>
                   </div>
-                  
               )}
 
-              {/* Wealth Growth (Option C: Cyan / Slate Gradient) */}
+              {/* Wealth Growth */}
               <div className="bg-gradient-to-br from-cyan-900 to-slate-800 rounded-2xl p-5 shadow-lg text-white relative overflow-hidden">
                 <div className="text-sm font-bold text-cyan-100 mb-2">🏦 大廈當年總結餘 (實質大廈儲錢能力)</div>
                 <div className="text-4xl font-black text-white tracking-tight mb-4">
@@ -404,6 +548,10 @@
                     </div>
                 </div>
               </div>
+
+              <button onClick={() => setIsDetailedModalOpen(true)} className="w-full py-3.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm active:bg-indigo-100 transition-colors">
+                  <FileTextIcon size={18} /> 查看動態計算明細 (官方報表格式)
+              </button>
 
               {/* Advanced Settings for 2027 */}
               {yearMode === 2027 && (
@@ -538,7 +686,7 @@
                       </tr>
 
                       <tr>
-                        <td className={`${tdLeftClass} bg-cyan-50`}>預計物管實際收取酬金</td>
+                        <td className={`${tdLeftClass} bg-cyan-50 border-b border-slate-100`}>預計物管實際收取酬金</td>
                         {scenarios.map((s, idx) => {
                           const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
                           return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums ${s.isTarget ? 'bg-amber-50/50 border-x border-amber-200 border-b-amber-200 font-bold text-amber-900' : 'bg-cyan-50/30 border-slate-100 text-slate-700'}`}>
@@ -548,7 +696,7 @@
                       </tr>
 
                       <tr>
-                        <td className={`${tdLeftClass} bg-white`}>日常營運純現金結餘<br/><span className="text-[8px] text-slate-400 font-normal">(大於0即無須動用老本)</span></td>
+                        <td className={`${tdLeftClass} bg-white border-b border-slate-100`}>日常營運純現金結餘<br/><span className="text-[8px] text-slate-400 font-normal">(大於0即無須動用老本)</span></td>
                         {scenarios.map((s, idx) => {
                           const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
                           const isPos = data.opCashFlow >= 0;
@@ -569,7 +717,7 @@
                       </tr>
 
                       <tr>
-                        <td className={`${tdLeftClass} bg-blue-50`}>🔒 當年撥入死期儲備金<br/><span className="text-[8px] text-blue-600/70 font-normal">(強制儲蓄總額)</span></td>
+                        <td className={`${tdLeftClass} bg-blue-50 border-b border-slate-200`}>🔒 當年撥入死期儲備金<br/><span className="text-[8px] text-blue-600/70 font-normal">(強制儲蓄總額)</span></td>
                         {scenarios.map((s, idx) => {
                           const data = calculateFinancials(s.rate, s.rebate, yearMode, remunRate, expIncrease, useR2Bug, manualExpense, includeOtherIncome, otherIncomeValue);
                           return <td key={idx} className={`py-2.5 px-1.5 text-center border-b text-[11px] tabular-nums font-bold text-blue-700 ${s.isTarget ? 'bg-amber-100/50 border-x border-amber-300 border-b-amber-300' : 'bg-blue-50/50 border-slate-200'}`}>
@@ -605,7 +753,7 @@
               <header className="pt-2 pb-1">
                 <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                   <ShieldIcon size={24} className="text-slate-700" />
-                  免責聲明及使用條款
+                  免責聲明及使用條款 (v1.1.0)
                 </h1>
               </header>
 
@@ -616,7 +764,7 @@
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="font-bold text-slate-800 flex items-center gap-1.5"><span className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-xs">2</span> 數據僅供參考</h3>
-                  <p className="pl-6">工具內所有運算邏輯皆依據澳門現行物管常規（如90/10拆分）建構。惟實際收支將受多項變數影響，開發者不保證試算數據之絕對精準，最終帳目請以大會決議及官方報告為準。</p>
+                  <p className="pl-6">工具內所有運算邏輯皆依據澳門現行物管常規（如90/10拆分）建構。惟實際收支將受多項變數影響，開發者不保證試算數據之絕對精準，最終帳目請以大會決議及官方報告為準。本工具可能會根據實際情況進行持續優化及數據更新，恕不另行通知。</p>
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="font-bold text-slate-800 flex items-center gap-1.5"><span className="bg-slate-100 text-slate-500 w-5 h-5 rounded-full flex items-center justify-center text-xs">3</span> 隱私與責任豁免</h3>
